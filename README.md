@@ -10,7 +10,7 @@ A single-player browser RTS in the lineage of *Age of Empires II*. One seeded ma
 
 - **A deterministic 30 Hz simulation.** The world is driven by a seeded PRNG and a command queue. The same seed plus the same commands produce the same hash.
 - **Four resources and three ages.** Villagers gather food, wood, gold, and stone; houses raise population; the Town Center advances from the Dark Age through Feudal to Castle.
-- **A real opponent.** The AI scouts, expands its economy, builds production, researches, and sends waves. Three difficulties change its pace and army size.
+- **An AI opponent.** The rival court expands its economy, trains villagers, and contests the map. Three difficulties change its pace and starting resources.
 - **Fog of war and a minimap.** Explored ground stays dimmed; hidden enemies do not render. The minimap doubles as a camera.
 - **A context-sensitive command card.** Train, research, advance, build, repair, set rally points, attack-move, hold, and choose stances. Every button has a hotkey.
 - **Original procedural presentation.** Isometric chunked terrain, painter's-order sprites, particles, screen shake, and a WebAudio soundscape synthesized at runtime.
