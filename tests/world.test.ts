@@ -35,6 +35,12 @@ describe('world foundation', () => {
     expect(world.result).toBe('playing');
   });
 
+  it('keeps resource-node ids disjoint from unit and building ids', () => {
+    const world = makeWorld();
+    const ids = [...world.units, ...world.buildings, ...world.nodes].map((entity) => entity.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it('is deterministic for a seed', () => {
     const a = makeWorld({ seed: 99 });
     const b = makeWorld({ seed: 99 });

@@ -5,10 +5,8 @@ test('capture the README screenshot', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#title-screen')).toBeVisible();
   await page.waitForFunction(() => Boolean(window.__epoch));
-  await page.evaluate(() => {
-    window.__epoch.start(20261030, 'normal', 'aurelians');
-    window.__epoch.showcase();
-  });
+  await page.click('#start-button');
+  await page.evaluate(() => window.__epoch.showcase());
   await expect(page.locator('#age-label')).toHaveText('Castle Age');
   // Let the opening notification fade before the still.
   await page.waitForTimeout(5200);

@@ -254,7 +254,7 @@ export class Input {
         return;
       }
     }
-    if (target && target.kind === 'building' && target.type === 'farm') {
+    if (target && target.kind === 'building' && target.type === 'farm' && target.kingdom === 0 && target.complete) {
       const villagers = selectedUnits.filter((u) => u.type === 'villager');
       if (villagers.length) {
         this.host.issue({ type: 'gather', kingdom: 0, ids: villagers.map((u) => u.id), nodeId: target.id });
@@ -328,6 +328,9 @@ export class Input {
     if (this.host.isOverlayOpen()) {
       if (key === 'escape') {
         this.host.closeOverlay();
+        event.preventDefault();
+      } else if (key === 'p' && this.host.isPaused()) {
+        this.host.togglePause();
         event.preventDefault();
       }
       return;

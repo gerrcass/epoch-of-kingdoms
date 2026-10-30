@@ -35,8 +35,8 @@ async function boot(page: Page): Promise<void> {
   await page.waitForFunction(() => Boolean(window.__epoch));
 }
 
-async function startMatch(page: Page, seed = 20261030): Promise<void> {
-  await page.evaluate((s) => window.__epoch.start(s, 'normal', 'aurelians'), seed);
+async function startMatch(page: Page): Promise<void> {
+  await page.click('#start-button');
   await expect(page.locator('#hud')).toBeVisible();
   await expect(page.locator('#title-screen')).toBeHidden();
 }

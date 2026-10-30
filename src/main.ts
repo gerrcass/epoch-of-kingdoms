@@ -34,7 +34,7 @@ class Game implements InputHost {
     this.hud = new Hud(
       {
         onStart: (settings) => this.startMatch(settings),
-        onPause: () => this.pause(),
+        onPause: () => this.togglePause(),
         onResume: () => this.resume(),
         onRestart: () => this.restart(),
         onResign: () => this.resign(),
@@ -347,7 +347,7 @@ class Game implements InputHost {
   }
 
   closeOverlay(): void {
-    this.hud.hideModal();
+    this.hud.closeModal();
   }
 
   togglePause(): void {

@@ -54,6 +54,8 @@ export function createWorld(options: MatchOptions): World {
   const rng = mulberry32(seed ^ 0x9e3779b9);
   const { map, nodes } = generateMap(seed);
   for (const node of nodes) node.alive = true;
+  const nextEntityId = nodes.reduce((max, node) => Math.max(max, node.id), 0) + 1;
+  const firstEntityId = nodes.reduce((max, node) => Math.max(max, node.id), 0) + 1;
 
   const world: World = {
     seed,
@@ -66,7 +68,7 @@ export function createWorld(options: MatchOptions): World {
     buildings: [],
     nodes,
     projectiles: [],
-    nextId: 1,
+    nextId: firstEntityId,
     commands: [],
     events: [],
     visible: [new Uint8Array(N * N), new Uint8Array(N * N)],
@@ -406,6 +408,17 @@ export function canPlaceBuilding(
   if (def.age > world.kingdoms[kingdom].age) return false;
   if (tileX < 1 || tileY < 1 || tileX + def.width > N - 1 || tileY + def.height > N - 1) return false;
   if (footprintBlocked(world.map, tileX, tileY, def.width, def.height)) return false;
+  const explored = world.explored[kingdom]!;
+  for (let y = tileY; y < tileY + def.height; y += 1) {
+    for (let x = tileX; x < tileX + def.width; x += 1) {
+      if (explored[idx(x, y)] !== 1) return false;
+    }
+  }
+  for (let y = tileY; y < tileY + def.height; y += 1) {
+    for (let x = tileX; x < tileX + def.width; x += 1) {
+      if (world.explored[kingdom]![idx(x, y)] !== 1) return false;
+    }
+  }
   for (const node of world.nodes) {
     if (!node.alive) continue;
     if (
@@ -480,7 +493,7 @@ function setPath(world: World, unit: Unit, goal: Vec2 | null): void {
   }
   const path = findPath(world.map, unit.x, unit.y, goal.x, goal.y);
   unit.path = path ?? [];
-  unit.pathIndex = 0;
+  unit.pathIndex = unit.path.length > 1 && Math.hypot(unit.path[0]!.x - unit.x, unit.path[0]!.y - unit.y) < 0.8 ? 1 : 0;
   unit.stuckTicks = 0;
   unit.repathAt = world.tick + 15;
 }
@@ -576,6 +589,8 @@ function applyCommand(world: World, command: Command): void {
     case 'gather': {
       const target = entityById(world, command.nodeId);
       if (!target) return;
+      if (target.kind === 'building' && (target.kingdom !== command.kingdom || !target.complete)) return;
+      if (target.kind === 'building' && (target.kingdom !== command.kingdom || !target.complete || target.type !== 'farm')) return;
       for (const unit of ownUnits(world, command.kingdom, command.ids)) {
         if (unit.type !== 'villager') continue;
         unit.order = { type: 'gather', nodeId: target.id, returning: false };
@@ -597,6 +612,18 @@ function applyCommand(world: World, command: Command): void {
     }
     case 'build': {
       const def = BUILDING_DEFS[command.building];
+      const existing = world.buildings.find(
+        (b) => b.alive && !b.complete && b.kingdom === command.kingdom && b.type === command.building && b.tileX === command.x && b.tileY === command.y,
+      );
+      if (existing) {
+        for (const unit of ownUnits(world, command.kingdom, command.ids).filter((u) => u.type === 'villager')) {
+          unit.order = { type: 'build', buildingId: existing.id };
+          unit.targetId = null;
+          unit.attackMove = false;
+          setPath(world, unit, entityApproach(world, unit, existing));
+        }
+        return;
+      }
       if (def.age > kingdom.age) {
         world.events.push({ type: 'notEnough', kingdom: command.kingdom, reason: `${def.name} requires ${ageName(def.age)}` });
         return;
@@ -796,17 +823,6 @@ function updateProduction(world: World): void {
       }
     }
 
-    const def = BUILDING_DEFS[building.type];
-    if (def.attack > 0) {
-      building.attackCooldown -= DT;
-      if (building.attackCooldown <= 0) {
-        const target = nearestEnemyUnit(world, building.kingdom, building.x, building.y, def.range);
-        if (target) {
-          building.attackCooldown = def.cooldown;
-          spawnArrow(world, building.kingdom, building.x, building.y, target, def.attack, 'pierce', {});
-        }
-      }
-    }
   }
 }
 
@@ -838,9 +854,25 @@ function updateGather(world: World, unit: Unit): void {
   const target = entityById(world, unit.order.nodeId);
   if (!target || !target.alive) {
     if (unit.carryAmount > 0) {
-      unit.order = { type: 'gather', nodeId: unit.order.nodeId, returning: true };
       const drop = nearestDropoff(world, unit.kingdom, unit.carryKind ?? 'food', unit.x, unit.y);
-      if (drop) setPath(world, unit, entityApproach(world, unit, drop));
+      if (!drop) {
+        unit.order = { type: 'idle' };
+        return;
+      }
+      if (distanceToEntity(unit.x, unit.y, drop) <= WORK_RANGE) {
+        const amount = unit.carryAmount;
+        if (unit.carryKind) {
+          world.kingdoms[unit.kingdom].stock[unit.carryKind] += amount;
+          world.kingdoms[unit.kingdom].stats.gathered += amount;
+          world.events.push({ type: 'deposit', x: drop.x, y: drop.y, resource: unit.carryKind, amount, kingdom: unit.kingdom });
+        }
+        unit.carryAmount = 0;
+        unit.carryKind = null;
+        unit.order = { type: 'idle' };
+      } else {
+        unit.order = { type: 'gather', nodeId: unit.order.nodeId, returning: true };
+        if (unit.path.length === 0) setPath(world, unit, entityApproach(world, unit, drop));
+      }
     } else {
       unit.order = { type: 'idle' };
     }
@@ -850,6 +882,33 @@ function updateGather(world: World, unit: Unit): void {
   const isFarm = target.kind === 'building' && target.type === 'farm';
   const resource = target.kind === 'node' ? NODE_DEFS[target.node].resource : 'food';
   const remaining = target.kind === 'node' ? target.amount : isFarm ? (target as Building).farmFood : 0;
+
+  if (!target || !target.alive) {
+    if (unit.carryAmount > 0) {
+      const drop = nearestDropoff(world, unit.kingdom, unit.carryKind ?? 'food', unit.x, unit.y);
+      if (!drop) {
+        unit.order = { type: 'idle' };
+        return;
+      }
+      if (distanceToEntity(unit.x, unit.y, drop) <= WORK_RANGE) {
+        const amount = unit.carryAmount;
+        if (unit.carryKind) {
+          world.kingdoms[unit.kingdom].stock[unit.carryKind] += amount;
+          world.kingdoms[unit.kingdom].stats.gathered += amount;
+          world.events.push({ type: 'deposit', x: drop.x, y: drop.y, resource: unit.carryKind, amount, kingdom: unit.kingdom });
+        }
+        unit.carryAmount = 0;
+        unit.carryKind = null;
+        unit.order = { type: 'idle' };
+      } else {
+        unit.order = { type: 'gather', nodeId: unit.order.nodeId, returning: true };
+        if (unit.path.length === 0) setPath(world, unit, entityApproach(world, unit, drop));
+      }
+    } else {
+      unit.order = { type: 'idle' };
+    }
+    return;
+  }
 
   if (unit.order.returning) {
     if (unit.carryAmount <= 0) {
@@ -1017,8 +1076,8 @@ function updateCombat(world: World): void {
     if (!target && (unit.order.type === 'idle' || unit.stance === 'aggressive' || (unit.order.type === 'move' && unit.attackMove))) {
       if (unit.stance === 'defensive' && Math.hypot(unit.x - unit.homeX, unit.y - unit.homeY) > 6) {
         // Hold near the post.
-      } else if (unit.stance !== 'standGround') {
-        const radius = def.vision + AGGRO_BONUS;
+      } else {
+        const radius = unit.stance === 'standGround' ? stats.range + 0.3 : def.vision + AGGRO_BONUS;
         target = nearestEnemyUnit(world, unit.kingdom, unit.x, unit.y, radius);
         if (target) unit.targetId = target.id;
       }
@@ -1044,9 +1103,12 @@ function updateCombat(world: World): void {
     }
 
     const explicit = unit.order.type === 'attack';
-    const chaseLimit = explicit || unit.attackMove ? 16 : unit.stance === 'aggressive' ? 10 : 5;
-    const homeDistance = Math.hypot(target.x - unit.homeX, target.y - unit.homeY);
-    const canChase = explicit || unit.attackMove || (unit.stance !== 'standGround' && homeDistance <= chaseLimit);
+    const homeDistance = Math.hypot(unit.x - unit.homeX, unit.y - unit.homeY);
+    const canChase =
+      explicit ||
+      unit.attackMove ||
+      (unit.stance === 'aggressive' && targetDistance <= 10) ||
+      (unit.stance === 'defensive' && targetDistance <= 5 && homeDistance <= 8);
     if (!canChase) {
       unit.targetId = null;
       continue;

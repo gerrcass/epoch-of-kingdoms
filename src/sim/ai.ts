@@ -179,7 +179,7 @@ function has(world: World, kind: BuildingKind): boolean {
 }
 
 function count(world: World, kind: BuildingKind): number {
-  return world.buildings.filter((b) => b.alive && b.kingdom === 1 && b.type === kind).length;
+  return world.buildings.filter((b) => b.alive && b.complete && b.kingdom === 1 && b.type === kind).length;
 }
 
 function tryBuild(
@@ -373,6 +373,9 @@ export function planAI(world: World): Command[] {
   }
 
   const needFood = villagers.length - assigned > 0;
+  if (!has(world, 'barracks') && villagers.length >= 5 && canPayLocal(budget, BUILDING_DEFS.barracks.cost)) {
+    tryBuild(world, commands, budget, 'barracks', homePos, villagers, 8);
+  }
   if (!has(world, 'lumberCamp') && villagers.length >= 4 && canPayLocal(budget, BUILDING_DEFS.lumberCamp.cost)) {
     const tree = nearestNode(world, homePos.x, homePos.y, ['tree']);
     if (tree) tryBuild(world, commands, budget, 'lumberCamp', { x: tree.x, y: tree.y }, villagers, 7);
@@ -383,9 +386,6 @@ export function planAI(world: World): Command[] {
   if (!has(world, 'miningCamp') && villagers.length >= 6 && canPayLocal(budget, BUILDING_DEFS.miningCamp.cost)) {
     const gold = nearestNode(world, homePos.x, homePos.y, ['gold']);
     if (gold) tryBuild(world, commands, budget, 'miningCamp', { x: gold.x, y: gold.y }, villagers, 7);
-  }
-  if (!has(world, 'barracks') && villagers.length >= 5 && canPayLocal(budget, BUILDING_DEFS.barracks.cost)) {
-    tryBuild(world, commands, budget, 'barracks', homePos, villagers, 8);
   }
   if (world.kingdoms[1].age >= 1 && !has(world, 'archeryRange') && villagers.length >= 8 && canPayLocal(budget, BUILDING_DEFS.archeryRange.cost)) {
     tryBuild(world, commands, budget, 'archeryRange', homePos, villagers, 8);

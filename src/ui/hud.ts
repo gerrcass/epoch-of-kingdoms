@@ -64,7 +64,7 @@ export interface HudCallbacks {
   onSettings(settings: PersistedSettings): void;
 }
 
-const BUILD_KEYS = ['Q', 'E', 'R', 'T', 'F', 'G', 'Z', 'X', 'C', 'V', 'B'];
+const BUILD_KEYS = ['Q', 'E', 'R', 'T', 'F', 'G', 'Z', 'C', 'V', 'B', 'N'];
 
 interface CardButton {
   key: string;
@@ -106,6 +106,7 @@ export class Hud {
   private lastSelectionSignature = '';
   private lastCommandRefresh = 0;
   private speedLabel = '1×';
+  private modalKind: 'pause' | 'results' | 'help' | 'settings' | null = null;
 
   constructor(callbacks: HudCallbacks, settings: PersistedSettings) {
     this.callbacks = callbacks;
@@ -137,7 +138,6 @@ export class Hud {
       button.style.setProperty('--accent', civ.accent);
       button.dataset.civ = id;
       button.innerHTML = `
-        <span></span>
         <span>
           <div class="civ-name">${civ.name}</div>
           <div class="civ-motto">${civ.title}</div>
@@ -195,7 +195,7 @@ export class Hud {
     this.q('mute-button').addEventListener('click', () => this.callbacks.onMute());
     this.q('help-button').addEventListener('click', () => this.callbacks.onHelp());
     this.q('idle-button').addEventListener('click', () => this.callbacks.onAction({ type: 'idle' }));
-    this.q('modal-close').addEventListener('click', () => this.hideModal());
+    this.q('modal-close').addEventListener('click', () => this.closeModal());
     this.q('objectives-toggle').addEventListener('click', () => {
       this.objectivesCollapsed = !this.objectivesCollapsed;
       this.q('objectives').classList.toggle('collapsed', this.objectivesCollapsed);
@@ -225,7 +225,7 @@ export class Hud {
     });
     this.q('command-grid').addEventListener('focusout', () => this.hideTooltip());
     this.q('modal').addEventListener('click', (event) => {
-      if (event.target === this.modal) this.hideModal();
+      if (event.target === this.modal) this.closeModal();
     });
     document.getElementById('set-muted')?.addEventListener('change', (event) => {
       this.settings.muted = (event.target as HTMLInputElement).checked;
@@ -737,6 +737,7 @@ export class Hud {
          <label><input type="checkbox" id="set-contrast" ${this.settings.highContrast ? 'checked' : ''} /> High contrast</label>
        </div>
        <p class="setting-note">Keys: P pause · F1 controls · Esc cancel · Space centre · . idle villager</p>`,
+      'pause',
     );
     this.q('resume-button').addEventListener('click', () => this.callbacks.onResume());
     this.q('pause-help').addEventListener('click', () => this.callbacks.onHelp());
@@ -779,6 +780,7 @@ export class Hud {
           <p>The fortunes of a kingdom are decided in one field, one hour.</p>
         </div>
       </div>`,
+      'help',
     );
   }
 
@@ -803,6 +805,7 @@ export class Hud {
          <button class="text-button" id="title-button">Return to title</button>
        </div>
        <p class="seed-note">Same seed + same commands = the same match.</p>`,
+      'results',
     );
     this.q('rematch-button').addEventListener('click', () => this.callbacks.onRestart());
     this.q('title-button').addEventListener('click', () => this.callbacks.onReturnToTitle());
@@ -818,6 +821,7 @@ export class Hud {
          <label><input type="checkbox" id="set-contrast" ${this.settings.highContrast ? 'checked' : ''} /> High contrast</label>
        </div>
        <p class="setting-note">The game runs entirely in your browser. This build uses a static, original soundtrack synthesized in the page.</p>`,
+      'settings',
     );
     this.bindSettingsInputs();
   }
@@ -852,14 +856,27 @@ export class Hud {
     this.q('mute-button').textContent = this.settings.muted ? '×' : '♪';
   }
 
-  private showModal(title: string, body: string): void {
+  private showModal(title: string, body: string, kind: 'pause' | 'results' | 'help' | 'settings'): void {
+    this.modalKind = kind;
     this.modalTitle.textContent = title;
     this.modalBody.innerHTML = body;
     this.modal.classList.remove('hidden');
+    this.modal.classList.toggle('locked', kind === 'results');
+  }
+
+  closeModal(): void {
+    if (this.modalKind === 'results') return;
+    if (this.modalKind === 'pause') {
+      this.callbacks.onResume();
+      return;
+    }
+    this.hideModal();
   }
 
   hideModal(): void {
     this.modal.classList.add('hidden');
+    this.modal.classList.remove('locked');
+    this.modalKind = null;
     this.helpOpen = false;
   }
 

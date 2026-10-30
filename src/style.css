@@ -696,6 +696,20 @@ input:focus-visible {
   opacity: 0.7;
 }
 
+.command-hint {
+  margin: 0;
+  color: var(--muted-2);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.civ-desc {
+  margin-top: 3px;
+  color: var(--muted-2);
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
 /* --------------------------------------------------------- Command card */
 
 .command-panel {
@@ -953,6 +967,20 @@ input:focus-visible {
   align-items: start;
 }
 
+.civ-desc {
+  color: var(--muted-2);
+  font-size: 10.5px;
+  line-height: 1.35;
+  margin-top: 3px;
+}
+
+.command-hint {
+  margin: 0;
+  color: var(--muted-2);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
 .title-block {
   border-top: 1px solid rgba(201, 176, 110, 0.28);
   padding-top: 13px;
@@ -1155,6 +1183,14 @@ input:focus-visible {
 }
 
 /* --------------------------------------------------------------- Modals */
+
+.modal.locked #modal-close {
+  display: none;
+}
+
+.modal.locked #modal-close {
+  display: none;
+}
 
 .modal {
   background: rgba(3, 6, 4, 0.7);
