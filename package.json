@@ -1,0 +1,41 @@
+{
+  "name": "epoch-of-kingdoms",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A single-player browser RTS in the lineage of Age of Empires II.",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "oxlint src tests e2e",
+    "test": "vitest run tests",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "test:e2e": "playwright test",
+    "screenshot": "playwright test e2e/screenshot.spec.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "oxlint": "^1.90.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.7",
+    "vitest": "^3.2.7"
+  },
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gerrcass/epoch-of-kingdoms.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gerrcass/epoch-of-kingdoms/issues"
+  },
+  "homepage": "https://github.com/gerrcass/epoch-of-kingdoms#readme"
+}

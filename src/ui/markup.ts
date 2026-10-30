@@ -1,0 +1,116 @@
+export const HUD_MARKUP = `
+<div id="hud" class="hidden">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">EK</span>
+      <span class="brand-name">Epoch of Kingdoms</span>
+    </div>
+    <div class="resources" id="resources"></div>
+    <div class="top-meta">
+      <div class="pop-chip" id="pop-chip"></div>
+      <div class="age-chip" id="age-label">Dark Age</div>
+      <div class="clock" id="clock">00:00</div>
+      <button class="icon-button" id="speed-button" title="Game speed" aria-label="Game speed">1×</button>
+      <button class="icon-button" id="pause-button" title="Pause (P)" aria-label="Pause">❚❚</button>
+      <button class="icon-button" id="mute-button" title="Mute" aria-label="Mute">♪</button>
+      <button class="icon-button" id="help-button" title="Controls (F1)" aria-label="Controls">?</button>
+    </div>
+  </header>
+
+  <aside id="objectives" class="objectives panel">
+    <div class="panel-title"><span>Chronicle</span><button id="objectives-toggle" aria-label="Toggle objectives">–</button></div>
+    <ul id="objective-list"></ul>
+  </aside>
+
+  <div id="notifications" class="notifications" aria-live="polite"></div>
+  <div id="pause" class="hidden"></div>
+
+  <div class="bottom">
+    <section class="panel selection-panel" aria-label="Selection">
+      <div class="selection-head"><span id="selection-title">No selection</span><span id="selection-count"></span></div>
+      <div id="selection-body" class="selection-body">
+        <p class="hint">Left-click a villager, soldier, or building. Drag to select a group.</p>
+        <p class="hint">Right-click to move, gather, attack, or set a rally point.</p>
+      </div>
+    </section>
+    <section class="panel minimap-panel" aria-label="Minimap">
+      <canvas id="minimap" width="192" height="192"></canvas>
+      <div class="minimap-footer">
+        <span id="idle-count">Idle villagers: 0</span>
+        <button id="idle-button" class="text-button" title="Next idle villager (.)">Find idle</button>
+      </div>
+    </section>
+    <section class="panel command-panel" aria-label="Commands">
+      <div class="command-head"><span id="command-context">Commands</span><span id="queue-summary"></span></div>
+      <div id="command-card" class="command-card"></div>
+      <div id="queue-list" class="queue-list"></div>
+    </section>
+  </div>
+</div>
+
+<div id="title-screen" class="overlay title-screen">
+  <div class="title-scrim"></div>
+  <div class="title-content">
+    <div class="crest" aria-hidden="true">
+      <svg viewBox="0 0 64 74" width="64" height="74">
+        <path d="M6 4h52v26c0 18-12 31-26 39C18 61 6 48 6 30V4Z" fill="#1b2419" stroke="#b99a55" stroke-width="2"/>
+        <path d="M16 16h32v14c0 12-8 21-16 27-8-6-16-15-16-27V16Z" fill="none" stroke="#d3b56a" stroke-width="1.4"/>
+        <path d="M32 20v20M22 28h20" stroke="#d3b56a" stroke-width="2"/>
+        <circle cx="32" cy="55" r="3" fill="#d3b56a"/>
+      </svg>
+    </div>
+    <p class="eyebrow">A skirmish in the Verdant Marches</p>
+    <h1>Epoch of<br /><span>Kingdoms</span></h1>
+    <p class="title-lede">
+      Raise a settlement, master four resources, and march three ages to the enemy gates.
+      Every villager is a decision. Every soldier is a wager.
+    </p>
+    <div class="title-grid">
+      <section class="title-block">
+        <h2>Choose your court</h2>
+        <div id="civ-list" class="civ-list"></div>
+      </section>
+      <section class="title-block">
+        <h2>Set the field</h2>
+        <div class="setting-row">
+          <span class="setting-label">Difficulty</span>
+          <div id="difficulty-list" class="segmented"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Map seed</span>
+          <div class="seed-row">
+            <input id="seed-input" class="seed-input" value="20261030" inputmode="numeric" aria-label="Map seed" />
+            <button id="seed-random" class="text-button" title="Roll a new seed">Roll</button>
+          </div>
+        </div>
+        <p class="seed-note">The same seed and the same commands reproduce the same match.</p>
+        <button id="start-button" class="primary-button">Begin your reign</button>
+        <div class="title-links">
+          <button id="title-help" class="text-button">How to play</button>
+          <span class="dot">·</span>
+          <button id="title-settings" class="text-button">Settings</button>
+        </div>
+        <div class="settings-row">
+          <label><input type="checkbox" id="mute-check" /> Mute sound</label>
+          <label><input type="checkbox" id="motion-check" /> Reduce motion</label>
+          <label><input type="checkbox" id="contrast-check" /> High contrast</label>
+        </div>
+      </section>
+    </div>
+    <footer class="title-footer">
+      <span>Original browser RTS · deterministic skirmish · no installs</span>
+      <span>v0.1</span>
+    </footer>
+  </div>
+</div>
+
+<div id="modal" class="overlay modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-heading"><h2 id="modal-title">Paused</h2><button id="modal-close" class="icon-button" aria-label="Close">×</button></div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div id="tooltip" class="tooltip hidden" role="tooltip"></div>
+<div id="toast" class="toast hidden" aria-live="assertive"></div>
+`;
